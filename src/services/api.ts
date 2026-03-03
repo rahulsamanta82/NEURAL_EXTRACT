@@ -1,0 +1,173 @@
+import { GoogleGenAI } from '@google/genai';
+
+const API_BASE = '/api';
+
+export class ApiService {
+  private static token: string | null = localStorage.getItem('token');
+
+  static setToken(token: string | null) {
+    this.token = token;
+    if (token) {
+      localStorage.setItem('token', token);
+    } else {
+      localStorage.removeItem('token');
+    }
+  }
+
+  static getToken() {
+    return this.token;
+  }
+
+  private static async request(endpoint: string, options: RequestInit = {}) {
+    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+    
+    const headers = new Headers(options.headers || {});
+    if (this.token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${this.token}`);
+    }
+
+    const response = await fetch(url, { ...options, headers });
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || `Request failed with status ${response.status}`);
+      }
+      return data;
+    } else {
+      const text = await response.text();
+      console.error(`[API Error] Non-JSON response from ${url}:`, text.substring(0, 200));
+      throw new Error(`Server error (${response.status}): Unexpected response format. Please check server logs.`);
+    }
+  }
+
+  static async login(credentials: any) {
+    return this.request('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+  }
+
+  static async register(credentials: any) {
+    return this.request('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+  }
+
+  static async extract(file: File, extractedData: any, type: 'cheque' | 'bill' = 'cheque') {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('data', JSON.stringify(extractedData));
+    formData.append('type', type);
+
+    return this.request('/extract', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  static async getHistory(type: 'cheque' | 'bill' = 'cheque') {
+    return this.request(`/history?type=${type}`);
+  }
+}
+
+// Proprietary Extraction Service
+export class ExtractionService {
+  private static getAI() {
+    // process.env.API_KEY is the user-selected key from the dialog
+    // process.env.GEMINI_API_KEY is the default platform key
+    const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('API Key not found. Please select an API key.');
+    }
+    return new GoogleGenAI({ apiKey });
+  }
+
+  static async extractChequeData(file: File): Promise<any> {
+    const ai = this.getAI();
+    const model = ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: [
+        {
+          parts: [
+            { text: 'Extract all details from this bank cheque. Return ONLY a JSON object with these keys: bank_name, cheque_number, account_number, ifsc_code, date, payee_name, amount_numbers, amount_words, micr_code. If a field is not found, use null.' },
+            {
+              inlineData: {
+                mimeType: file.type,
+                data: await this.fileToBase64(file),
+              },
+            },
+          ],
+        },
+      ],
+      config: {
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const response = await model;
+    return JSON.parse(response.text || '{}');
+  }
+
+  static async extractBillData(file: File): Promise<any> {
+    const ai = this.getAI();
+    const model = ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: [
+        {
+          parts: [
+            { text: `Extract all details from this Indian paper bill/invoice (could be a restaurant bill, retail receipt, or utility bill). 
+            Return ONLY a JSON object with these keys: 
+            - store_name: Name of the establishment
+            - store_address: Full address if available
+            - store_phone: Contact number if available
+            - invoice_number: Bill/Invoice/Order number
+            - date: Date of transaction
+            - time: Time of transaction if available
+            - gstin: GST number of the store
+            - items: Array of objects with { description, quantity, rate, amount }
+            - subtotal: Amount before taxes
+            - cgst: CGST amount if specified
+            - sgst: SGST amount if specified
+            - service_charge: Service charge if specified
+            - discount: Discount amount if specified
+            - tax_amount: Total tax amount
+            - total_amount: Final payable amount
+            - payment_mode: Cash/Card/UPI if specified
+            - raw_text: A full transcription of all text found on the bill for reference.
+            
+            If a field is not found, use null. Ensure all numeric values are returned as strings or numbers without currency symbols.` },
+            {
+              inlineData: {
+                mimeType: file.type,
+                data: await this.fileToBase64(file),
+              },
+            },
+          ],
+        },
+      ],
+      config: {
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const response = await model;
+    return JSON.parse(response.text || '{}');
+  }
+
+  private static fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  }
+}

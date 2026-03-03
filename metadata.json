@@ -1,5 +1,5 @@
 {
   "name": "ChequeExtract AI",
-  "description": "AI-powered bank cheque data extraction tool using Gemini OCR and Express backend.",
+  "description": "Proprietary AI-powered bank cheque data extraction tool for Indian financial institutions.",
   "requestFramePermissions": []
 }
