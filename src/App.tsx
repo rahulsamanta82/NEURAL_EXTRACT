@@ -29,6 +29,7 @@ export default function App() {
   const [extractedData, setExtractedData] = useState<any>(null);
   const [revealedFields, setRevealedFields] = useState<Set<string>>(new Set());
   const [history, setHistory] = useState<any[]>([]);
+  const [hasApiKey, setHasApiKey] = useState(false);
 
   // Reset state when a new file is selected, cleared, or processor type changes
   useEffect(() => {
@@ -40,6 +41,14 @@ export default function App() {
 
   // Initialize
   useEffect(() => {
+    const checkApiKey = async () => {
+      if (window.aistudio?.hasSelectedApiKey) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        setHasApiKey(hasKey);
+      }
+    };
+    checkApiKey();
+
     if (token) {
       ApiService.setToken(token);
       setView('upload');
@@ -145,7 +154,7 @@ export default function App() {
   const handleSelectKey = async () => {
     if (window.aistudio?.openSelectKey) {
       await window.aistudio.openSelectKey();
-      // After selecting, we should ideally refresh or just let the next call use the new key
+      setHasApiKey(true);
       setSuccess('API Key updated. You can now retry the extraction.');
       setError(null);
     }
@@ -283,6 +292,7 @@ export default function App() {
               toggleField={toggleField}
               handleExtraction={handleExtraction}
               onSelectKey={handleSelectKey}
+              hasApiKey={hasApiKey}
               exportData={exportData}
             />
           )}

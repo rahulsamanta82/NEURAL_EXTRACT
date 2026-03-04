@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { 
   Upload, FileText, X, Loader2, CheckCircle2, AlertCircle, 
   ChevronRight, Download, Share2, Printer, Eye, EyeOff, 
@@ -24,6 +24,7 @@ interface UploadViewProps {
   toggleField: (field: string) => void;
   handleExtraction: () => void;
   onSelectKey: () => void;
+  hasApiKey: boolean;
   exportData: (format: 'json' | 'csv' | 'excel') => void;
 }
 
@@ -42,6 +43,7 @@ export const UploadView = ({
   toggleField,
   handleExtraction,
   onSelectKey,
+  hasApiKey,
   exportData
 }: UploadViewProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -244,7 +246,7 @@ export const UploadView = ({
         </div>
 
         {/* Right Column: Results */}
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-5 space-y-8">
           <div className="sticky top-32 space-y-8">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-2xl font-display font-bold text-slate-900 tracking-tight">Extraction Results</h3>

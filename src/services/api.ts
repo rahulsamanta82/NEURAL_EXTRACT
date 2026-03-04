@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 
-const API_BASE = '/api';
+const API_BASE = `${window.location.origin}/api`;
 
 export class ApiService {
   private static token: string | null = localStorage.getItem('token');
@@ -26,6 +26,7 @@ export class ApiService {
       headers.set('Authorization', `Bearer ${this.token}`);
     }
 
+    console.log(`[API Fetch] ${options.method || 'GET'} ${url}`);
     const response = await fetch(url, { ...options, headers });
     
     const contentType = response.headers.get('content-type');
@@ -37,8 +38,9 @@ export class ApiService {
       return data;
     } else {
       const text = await response.text();
-      console.error(`[API Error] Non-JSON response from ${url}:`, text.substring(0, 200));
-      throw new Error(`Server error (${response.status}): Unexpected response format. Please check server logs.`);
+      const preview = text.substring(0, 100).replace(/[\n\r]/g, ' ');
+      console.error(`[API Error] Non-JSON response from ${url}:`, preview);
+      throw new Error(`Server error (${response.status}): Unexpected response format. (Preview: ${preview}...)`);
     }
   }
 
