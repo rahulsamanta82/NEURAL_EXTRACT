@@ -29,11 +29,21 @@ export class ApiService {
     console.log(`[API Fetch] ${options.method || 'GET'} ${url}`);
     const response = await fetch(url, { ...options, headers });
     
+    // Handle unauthorized access (e.g., database reset or expired token)
+    if (response.status === 401) {
+      console.warn('[API] Unauthorized access - clearing token');
+      this.setToken(null);
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Unauthorized - Please log in again');
+    }
+
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || `Request failed with status ${response.status}`);
+        const message = data.error || `Request failed with status ${response.status}`;
+        const details = data.details ? ` (${data.details})` : '';
+        throw new Error(`${message}${details}`);
       }
       return data;
     } else {

@@ -140,6 +140,12 @@ export default function App() {
       console.error('Extraction failed:', err);
       let errorMessage = err.message || 'Failed to process document. Please try again.';
       
+      // Handle Unauthorized
+      if (errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('log in again')) {
+        handleLogout();
+        return;
+      }
+      
       // Handle Quota Error
       if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
         errorMessage = 'You have exceeded the free tier quota for neural extraction. Please switch to a paid API key to continue processing high volumes.';

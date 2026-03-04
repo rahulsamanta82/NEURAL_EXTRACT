@@ -63,10 +63,17 @@ const authenticateToken = (req: any, res: any, next: any) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+  jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
     if (err) {
       return res.status(403).json({ error: 'Forbidden' });
     }
+    
+    // Verify user exists in DB (especially important for ephemeral DBs like on Vercel)
+    const user = db.prepare('SELECT id, email FROM users WHERE id = ?').get(decoded.id);
+    if (!user) {
+      return res.status(401).json({ error: 'User no longer exists. Please log in again.' });
+    }
+    
     req.user = user;
     next();
   });
@@ -119,25 +126,38 @@ apiRouter.post('/extract', authenticateToken, upload.single('file'), async (req:
   }
 
   try {
+    console.log('Extraction data received:', req.body.data ? 'Yes' : 'No');
+    console.log('File received:', req.file ? req.file.filename : 'No');
+    
     const extractedData = JSON.parse(req.body.data || '{}');
     const type = req.body.type || 'cheque';
     
+    if (!req.user || !req.user.id) {
+      console.error('User ID missing from request');
+      return res.status(401).json({ error: 'User session invalid' });
+    }
+
     const stmt = db.prepare(`
       INSERT INTO extractions (user_id, type, json_data, file_path) 
       VALUES (?, ?, ?, ?)
     `);
 
-    stmt.run(
+    const result = stmt.run(
       req.user.id,
       type,
       JSON.stringify(extractedData),
       req.file.path
     );
 
-    res.json({ success: true, file_path: req.file.path });
+    console.log('Extraction saved successfully, ID:', result.lastInsertRowid);
+    res.json({ success: true, id: result.lastInsertRowid, file_path: req.file.path });
   } catch (error: any) {
-    console.error('Save error:', error);
-    res.status(500).json({ error: 'Failed to save extracted data', details: error.message });
+    console.error('Save error details:', error);
+    res.status(500).json({ 
+      error: 'Failed to save extracted data', 
+      details: error.message,
+      code: error.code || 'UNKNOWN'
+    });
   }
 });
 
