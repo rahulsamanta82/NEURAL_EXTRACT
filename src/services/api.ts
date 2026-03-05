@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 
-const API_BASE = `${window.location.origin}/api`;
+const API_BASE = `${window.location.origin}/api`.replace(/\/$/, '');
 
 export class ApiService {
   private static token: string | null = localStorage.getItem('token');
@@ -19,7 +19,9 @@ export class ApiService {
   }
 
   private static async request(endpoint: string, options: RequestInit = {}) {
-    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+    // Ensure endpoint starts with a slash for joining, but we'll handle it robustly
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${cleanEndpoint}`;
     
     const headers = new Headers(options.headers || {});
     if (this.token && !headers.has('Authorization')) {
@@ -101,74 +103,82 @@ export class ExtractionService {
 
   static async extractChequeData(file: File): Promise<any> {
     const ai = this.getAI();
-    const model = ai.models.generateContent({
-      model: 'gemini-3.1-pro-preview',
-      contents: [
-        {
-          parts: [
-            { text: 'Extract all details from this bank cheque. Return ONLY a JSON object with these keys: bank_name, cheque_number, account_number, ifsc_code, date, payee_name, amount_numbers, amount_words, micr_code. If a field is not found, use null.' },
-            {
-              inlineData: {
-                mimeType: file.type,
-                data: await this.fileToBase64(file),
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: [
+          {
+            parts: [
+              { text: 'Extract all details from this bank cheque. Return ONLY a JSON object with these keys: bank_name, cheque_number, account_number, ifsc_code, date, payee_name, amount_numbers, amount_words, micr_code. If a field is not found, use null.' },
+              {
+                inlineData: {
+                  mimeType: file.type,
+                  data: await this.fileToBase64(file),
+                },
               },
-            },
-          ],
+            ],
+          },
+        ],
+        config: {
+          responseMimeType: 'application/json',
         },
-      ],
-      config: {
-        responseMimeType: 'application/json',
-      },
-    });
+      });
 
-    const response = await model;
-    return JSON.parse(response.text || '{}');
+      return JSON.parse(response.text || '{}');
+    } catch (error: any) {
+      console.error('Gemini Cheque Extraction Error:', error);
+      throw error;
+    }
   }
 
   static async extractBillData(file: File): Promise<any> {
     const ai = this.getAI();
-    const model = ai.models.generateContent({
-      model: 'gemini-3.1-pro-preview',
-      contents: [
-        {
-          parts: [
-            { text: `Extract all details from this Indian paper bill/invoice (could be a restaurant bill, retail receipt, or utility bill). 
-            Return ONLY a JSON object with these keys: 
-            - store_name: Name of the establishment
-            - store_address: Full address if available
-            - store_phone: Contact number if available
-            - invoice_number: Bill/Invoice/Order number
-            - date: Date of transaction
-            - time: Time of transaction if available
-            - gstin: GST number of the store
-            - items: Array of objects with { description, quantity, rate, amount }
-            - subtotal: Amount before taxes
-            - cgst: CGST amount if specified
-            - sgst: SGST amount if specified
-            - service_charge: Service charge if specified
-            - discount: Discount amount if specified
-            - tax_amount: Total tax amount
-            - total_amount: Final payable amount
-            - payment_mode: Cash/Card/UPI if specified
-            - raw_text: A full transcription of all text found on the bill for reference.
-            
-            If a field is not found, use null. Ensure all numeric values are returned as strings or numbers without currency symbols.` },
-            {
-              inlineData: {
-                mimeType: file.type,
-                data: await this.fileToBase64(file),
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: [
+          {
+            parts: [
+              { text: `Extract all details from this Indian paper bill/invoice (could be a restaurant bill, retail receipt, or utility bill). 
+              Return ONLY a JSON object with these keys: 
+              - store_name: Name of the establishment
+              - store_address: Full address if available
+              - store_phone: Contact number if available
+              - invoice_number: Bill/Invoice/Order number
+              - date: Date of transaction
+              - time: Time of transaction if available
+              - gstin: GST number of the store
+              - items: Array of objects with { description, quantity, rate, amount }
+              - subtotal: Amount before taxes
+              - cgst: CGST amount if specified
+              - sgst: SGST amount if specified
+              - service_charge: Service charge if specified
+              - discount: Discount amount if specified
+              - tax_amount: Total tax amount
+              - total_amount: Final payable amount
+              - payment_mode: Cash/Card/UPI if specified
+              - raw_text: A full transcription of all text found on the bill for reference.
+              
+              If a field is not found, use null. Ensure all numeric values are returned as strings or numbers without currency symbols.` },
+              {
+                inlineData: {
+                  mimeType: file.type,
+                  data: await this.fileToBase64(file),
+                },
               },
-            },
-          ],
+            ],
+          },
+        ],
+        config: {
+          responseMimeType: 'application/json',
         },
-      ],
-      config: {
-        responseMimeType: 'application/json',
-      },
-    });
+      });
 
-    const response = await model;
-    return JSON.parse(response.text || '{}');
+      return JSON.parse(response.text || '{}');
+    } catch (error: any) {
+      console.error('Gemini Bill Extraction Error:', error);
+      throw error;
+    }
   }
 
   private static fileToBase64(file: File): Promise<string> {

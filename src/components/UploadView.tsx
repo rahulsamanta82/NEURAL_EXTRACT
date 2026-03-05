@@ -218,12 +218,12 @@ export const UploadView = ({
               <div>
                 <p className="font-bold mb-1">Extraction Error</p>
                 <p className="text-sm font-medium leading-relaxed opacity-80">{error}</p>
-                {error.includes('quota') && (
+                {(error.toLowerCase().includes('quota') || error.includes('API key')) && (
                   <button 
                     onClick={onSelectKey}
                     className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
                   >
-                    Switch to Paid API Key
+                    {hasApiKey ? 'Change API Key' : 'Switch to Paid API Key'}
                   </button>
                 )}
               </div>

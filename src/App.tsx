@@ -147,8 +147,12 @@ export default function App() {
       }
       
       // Handle Quota Error
-      if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
-        errorMessage = 'You have exceeded the free tier quota for neural extraction. Please switch to a paid API key to continue processing high volumes.';
+      if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.toLowerCase().includes('quota')) {
+        if (hasApiKey) {
+          errorMessage = 'Your provided API key has exceeded its quota. Please check your billing status in Google AI Studio or switch to a different key.';
+        } else {
+          errorMessage = 'You have exceeded the free tier quota for neural extraction. Please switch to a paid API key to continue processing high volumes.';
+        }
       }
       
       setError(errorMessage);
