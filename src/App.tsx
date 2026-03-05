@@ -140,6 +140,17 @@ export default function App() {
       console.error('Extraction failed:', err);
       let errorMessage = err.message || 'Failed to process document. Please try again.';
       
+      // Try to parse JSON error if it's still a string
+      if (errorMessage.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(errorMessage);
+          if (parsed.error?.message) errorMessage = parsed.error.message;
+          else if (parsed.message) errorMessage = parsed.message;
+        } catch (e) {
+          // Keep original message if parsing fails
+        }
+      }
+      
       // Handle Unauthorized
       if (errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('log in again')) {
         handleLogout();

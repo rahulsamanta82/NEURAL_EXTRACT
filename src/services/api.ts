@@ -101,11 +101,78 @@ export class ExtractionService {
     return new GoogleGenAI({ apiKey });
   }
 
-  static async extractChequeData(file: File): Promise<any> {
+  private static async callGeminiWithRetry(params: any, maxRetries = 5): Promise<any> {
     const ai = this.getAI();
+    let lastError: any;
+    // Try different models in order of preference/cost
+    const models = [
+      'gemini-3-flash-preview', 
+      'gemini-3.1-flash-lite-preview', 
+      'gemini-3.1-pro-preview'
+    ];
+
+    for (const modelName of models) {
+      console.log(`[Extraction] Attempting with model: ${modelName}`);
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          const response = await ai.models.generateContent({
+            ...params,
+            model: modelName,
+          });
+          return response;
+        } catch (error: any) {
+          lastError = error;
+          
+          // Extract status and message from various possible error formats
+          const status = error?.status || error?.code || error?.response?.status;
+          const message = error?.message || '';
+          const errorBody = typeof error?.text === 'function' ? await error.text() : '';
+          
+          console.error(`[Gemini Error] Model: ${modelName}, Attempt: ${i + 1}, Status: ${status}, Message: ${message}`);
+
+          // If it's a 503 (Unavailable), 429 (Rate Limit), or 500 (Internal), we retry
+          const isRetryable = 
+            status === 503 || 
+            status === 'UNAVAILABLE' || 
+            status === 429 || 
+            status === 500 ||
+            message.includes('high demand') || 
+            message.includes('temporary') ||
+            errorBody.includes('high demand');
+
+          if (isRetryable) {
+            const delay = Math.pow(2, i) * 2000; // Start with 2s, then 4s, 8s, 16s, 32s
+            console.warn(`Gemini API busy/error. Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          
+          // If it's a safety error or other non-retryable error, try next model
+          console.warn(`Non-retryable error with ${modelName}, trying next model if available.`);
+          break;
+        }
+      }
+    }
+    
+    // If we reach here, all models and retries failed
+    // Try to extract a clean message from the last error
+    let finalMessage = 'The AI service is currently overloaded. Please try again in 1-2 minutes.';
+    if (lastError?.message) {
+      try {
+        // If message is a JSON string, parse it
+        const parsed = JSON.parse(lastError.message);
+        if (parsed.error?.message) finalMessage = parsed.error.message;
+      } catch {
+        finalMessage = lastError.message;
+      }
+    }
+    
+    throw new Error(finalMessage);
+  }
+
+  static async extractChequeData(file: File): Promise<any> {
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+      const response = await this.callGeminiWithRetry({
         contents: [
           {
             parts: [
@@ -132,10 +199,8 @@ export class ExtractionService {
   }
 
   static async extractBillData(file: File): Promise<any> {
-    const ai = this.getAI();
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+      const response = await this.callGeminiWithRetry({
         contents: [
           {
             parts: [
