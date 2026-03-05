@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { 
-  ChevronRight, Cpu, ShieldCheck, Zap, 
+import {
+  ChevronRight, Cpu, ShieldCheck, Zap,
   FileText, Banknote, Database, ArrowRight,
   Sparkles, Layers, Globe
 } from 'lucide-react';
@@ -36,7 +36,7 @@ export const LandingView = ({ onStart }: LandingViewProps) => {
           <a href="#" className="hover:text-white transition-colors">Enterprise</a>
           <a href="#" className="hover:text-white transition-colors">Pricing</a>
         </div>
-        <Button 
+        <Button
           onClick={onStart}
           className="bg-white text-black hover:bg-slate-200 rounded-full px-6 py-2 text-sm font-bold"
         >
@@ -48,7 +48,7 @@ export const LandingView = ({ onStart }: LandingViewProps) => {
       <main className="relative z-10 pt-20 pb-32 px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div className="space-y-10">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
@@ -58,7 +58,7 @@ export const LandingView = ({ onStart }: LandingViewProps) => {
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-400">Next-Gen Document Intelligence</span>
             </motion.div>
 
-            <motion.h1 
+            <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -69,23 +69,23 @@ export const LandingView = ({ onStart }: LandingViewProps) => {
               REDEFINED.
             </motion.h1>
 
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
               className="text-lg text-slate-400 max-w-lg leading-relaxed font-medium"
             >
-              High-precision neural processing for Indian bank cheques and paper bills. 
+              High-precision neural processing for Indian bank cheques and paper bills.
               Transform raw documents into structured data with 99.4% accuracy.
             </motion.p>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
               className="flex flex-col sm:flex-row gap-4"
             >
-              <Button 
+              <Button
                 onClick={onStart}
                 className="h-16 px-10 rounded-2xl bg-brand-600 hover:bg-brand-700 text-lg font-bold shadow-2xl shadow-brand-600/40 group"
               >
@@ -97,7 +97,7 @@ export const LandingView = ({ onStart }: LandingViewProps) => {
               </button>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1, delay: 1 }}
@@ -116,18 +116,18 @@ export const LandingView = ({ onStart }: LandingViewProps) => {
             </motion.div>
           </div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.8, rotateY: 20 }}
             animate={{ opacity: 1, scale: 1, rotateY: 0 }}
             transition={{ duration: 1.2, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="relative hidden lg:block"
           >
             <div className="absolute -inset-4 bg-brand-500/20 blur-[100px] rounded-full animate-pulse-glow" />
-            
+
             {/* Floating UI Elements */}
             <div className="relative glass-dark rounded-[2.5rem] p-8 border border-white/10 shadow-2xl overflow-hidden group">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-500 to-transparent opacity-50" />
-              
+
               <div className="flex items-center justify-between mb-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-brand-500/20 rounded-xl flex items-center justify-center">
@@ -178,7 +178,7 @@ export const LandingView = ({ onStart }: LandingViewProps) => {
             </div>
 
             {/* Decorative Elements */}
-            <motion.div 
+            <motion.div
               animate={{ y: [0, -20, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               className="absolute -top-10 -right-10 p-6 glass-dark rounded-3xl border border-white/10 shadow-2xl z-20"
@@ -186,7 +186,7 @@ export const LandingView = ({ onStart }: LandingViewProps) => {
               <ShieldCheck className="w-8 h-8 text-emerald-400" />
             </motion.div>
 
-            <motion.div 
+            <motion.div
               animate={{ y: [0, 20, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
               className="absolute -bottom-10 -left-10 p-6 glass-dark rounded-3xl border border-white/10 shadow-2xl z-20"
@@ -198,7 +198,7 @@ export const LandingView = ({ onStart }: LandingViewProps) => {
       </main>
 
       {/* Trusted By Section */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -277,7 +277,9 @@ export const LandingView = ({ onStart }: LandingViewProps) => {
           <Cpu className="w-5 h-5 text-brand-400" />
           <span className="font-display text-sm font-bold tracking-tight uppercase">Neural Extract</span>
         </div>
-        <p className="text-slate-500 text-xs font-medium">© 2024 NeuralExtract AI. All rights reserved. Built for Indian Enterprises.</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+          © 2026 NeuralExtract AI | Made with ❤️ by Rahul Samanta | 🇮🇳 India
+        </p>
         <div className="flex gap-6 text-slate-500 text-xs font-medium">
           <a href="#" className="hover:text-white transition-colors">Privacy</a>
           <a href="#" className="hover:text-white transition-colors">Terms</a>

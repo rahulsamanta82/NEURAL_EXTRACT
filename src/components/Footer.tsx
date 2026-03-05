@@ -46,7 +46,7 @@ export const Footer = () => (
       </div>
       <div className="pt-12 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-8">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-          © 2026 NeuralExtract AI. Proudly Made in India 🇮🇳
+          © 2026 NeuralExtract AI — Built with ❤️ by Rahul Samanta | Proudly Made in India 🇮🇳
         </p>
         <div className="flex gap-10 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
           <a href="#" className="hover:text-slate-900 transition-colors">Privacy</a>
