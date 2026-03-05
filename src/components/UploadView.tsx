@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { 
   Upload, FileText, X, Loader2, CheckCircle2, AlertCircle, 
-  ChevronRight, Download, Share2, Printer, Eye, EyeOff, 
+  ChevronRight, Download, Share2, Eye, EyeOff, 
   Banknote, Calendar, Hash, User, CreditCard, MapPin, Info,
   Cpu, Database, ShieldCheck
 } from 'lucide-react';
@@ -72,7 +72,7 @@ export const UploadView = ({
         <div className="lg:col-span-7 space-y-10">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-2">
             <div className="flex-1">
-              <h2 className="text-4xl font-display font-bold text-slate-900 tracking-tight">Document Processor</h2>
+              <h2 className="text-4xl font-display font-bold text-slate-900 tracking-tight">DocuMint Processor</h2>
               <p className="text-slate-500 text-sm mt-2 font-medium">Upload a {processorType === 'cheque' ? 'bank cheque' : 'paper bill'} for high-precision neural extraction.</p>
             </div>
             
@@ -166,9 +166,6 @@ export const UploadView = ({
                 
                 <div className="absolute top-6 right-6 flex gap-2">
                   <button className="p-2.5 bg-slate-900/80 backdrop-blur-md text-white rounded-xl hover:bg-slate-800 transition-all border border-white/10">
-                    <Printer className="w-4 h-4" />
-                  </button>
-                  <button className="p-2.5 bg-slate-900/80 backdrop-blur-md text-white rounded-xl hover:bg-slate-800 transition-all border border-white/10">
                     <Share2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -180,7 +177,7 @@ export const UploadView = ({
                       <div className="absolute inset-0 w-20 h-20 border-4 border-brand-500 rounded-full border-t-transparent animate-spin" />
                       <Cpu className="absolute inset-0 m-auto w-8 h-8 text-brand-500 animate-pulse" />
                     </div>
-                    <h3 className="text-xl font-bold mb-3">Proprietary Neural Analysis</h3>
+                    <h3 className="text-xl font-bold mb-3">DocuMint Neural Analysis</h3>
                     <p className="text-slate-400 text-sm max-w-xs leading-relaxed font-medium">
                       Our in-house AI engine is extracting high-precision financial data from your {processorType === 'cheque' ? 'Indian bank cheque' : 'paper bill'}.
                     </p>
@@ -286,7 +283,7 @@ export const UploadView = ({
               extractedData ? "bg-white border-slate-100 shadow-2xl shadow-slate-200/50" : "bg-slate-50 border-slate-100 border-dashed min-h-[600px] flex flex-col items-center justify-center p-12 text-center"
             )}>
               {extractedData ? (
-                <div className="divide-y divide-slate-50">
+                <div className="divide-y divide-slate-50 relative">
                   {revealedFields.has('raw_json') ? (
                     <div className="p-8 bg-slate-900 text-brand-400 font-mono text-[10px] overflow-auto max-h-[600px] custom-scrollbar">
                       <div className="flex justify-between items-center mb-4 text-slate-400 font-sans">
@@ -495,7 +492,7 @@ export const UploadView = ({
             {extractedData && (
               <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-700 text-xs font-medium">
                 <ShieldCheck className="w-4 h-4 flex-shrink-0" />
-                <p>All data is processed within our secure Indian data centers and encrypted.</p>
+                <p>All data is processed within our secure DocuMint data centers and encrypted.</p>
               </div>
             )}
           </div>

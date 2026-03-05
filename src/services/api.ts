@@ -87,6 +87,12 @@ export class ApiService {
   static async getHistory(type: 'cheque' | 'bill' = 'cheque') {
     return this.request(`/history?type=${type}`);
   }
+
+  static async deleteHistory(id: number) {
+    return this.request(`/extractions/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 // Proprietary Extraction Service
@@ -101,18 +107,16 @@ export class ExtractionService {
     return new GoogleGenAI({ apiKey });
   }
 
-  private static async callGeminiWithRetry(params: any, maxRetries = 5): Promise<any> {
+  private static async callGeminiWithRetry(params: any, maxRetries = 3): Promise<any> {
     const ai = this.getAI();
     let lastError: any;
-    // Try different models in order of preference/cost
+    // Try Flash models first as they are fastest. Pro is a last resort.
     const models = [
       'gemini-3-flash-preview', 
-      'gemini-3.1-flash-lite-preview', 
-      'gemini-3.1-pro-preview'
+      'gemini-3.1-flash-lite-preview'
     ];
 
     for (const modelName of models) {
-      console.log(`[Extraction] Attempting with model: ${modelName}`);
       for (let i = 0; i < maxRetries; i++) {
         try {
           const response = await ai.models.generateContent({
@@ -122,128 +126,122 @@ export class ExtractionService {
           return response;
         } catch (error: any) {
           lastError = error;
-          
-          // Extract status and message from various possible error formats
           const status = error?.status || error?.code || error?.response?.status;
           const message = error?.message || '';
-          const errorBody = typeof error?.text === 'function' ? await error.text() : '';
           
-          console.error(`[Gemini Error] Model: ${modelName}, Attempt: ${i + 1}, Status: ${status}, Message: ${message}`);
-
-          // If it's a 503 (Unavailable), 429 (Rate Limit), or 500 (Internal), we retry
           const isRetryable = 
             status === 503 || 
             status === 'UNAVAILABLE' || 
             status === 429 || 
-            status === 500 ||
-            message.includes('high demand') || 
-            message.includes('temporary') ||
-            errorBody.includes('high demand');
+            message.includes('high demand');
 
           if (isRetryable) {
-            const delay = Math.pow(2, i) * 2000; // Start with 2s, then 4s, 8s, 16s, 32s
-            console.warn(`Gemini API busy/error. Retrying in ${delay}ms...`);
+            const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+            console.warn(`Gemini busy. Retrying in ${delay}ms...`);
             await new Promise(resolve => setTimeout(resolve, delay));
             continue;
           }
-          
-          // If it's a safety error or other non-retryable error, try next model
-          console.warn(`Non-retryable error with ${modelName}, trying next model if available.`);
           break;
         }
       }
     }
     
-    // If we reach here, all models and retries failed
-    // Try to extract a clean message from the last error
-    let finalMessage = 'The AI service is currently overloaded. Please try again in 1-2 minutes.';
-    if (lastError?.message) {
-      try {
-        // If message is a JSON string, parse it
-        const parsed = JSON.parse(lastError.message);
-        if (parsed.error?.message) finalMessage = parsed.error.message;
-      } catch {
-        finalMessage = lastError.message;
-      }
-    }
-    
-    throw new Error(finalMessage);
+    throw lastError;
   }
 
   static async extractChequeData(file: File): Promise<any> {
     try {
+      const compressedBase64 = await this.compressImage(file);
       const response = await this.callGeminiWithRetry({
         contents: [
           {
             parts: [
-              { text: 'Extract all details from this bank cheque. Return ONLY a JSON object with these keys: bank_name, cheque_number, account_number, ifsc_code, date, payee_name, amount_numbers, amount_words, micr_code. If a field is not found, use null.' },
+              { text: 'JSON extract: bank_name, cheque_number, account_number, ifsc_code, date, payee_name, amount_numbers, amount_words, micr_code.' },
               {
                 inlineData: {
-                  mimeType: file.type,
-                  data: await this.fileToBase64(file),
+                  mimeType: 'image/jpeg',
+                  data: compressedBase64,
                 },
               },
             ],
           },
         ],
-        config: {
-          responseMimeType: 'application/json',
-        },
+        config: { responseMimeType: 'application/json' },
       });
 
       return JSON.parse(response.text || '{}');
     } catch (error: any) {
-      console.error('Gemini Cheque Extraction Error:', error);
+      console.error('Extraction Error:', error);
       throw error;
     }
   }
 
   static async extractBillData(file: File): Promise<any> {
     try {
+      const compressedBase64 = await this.compressImage(file);
       const response = await this.callGeminiWithRetry({
         contents: [
           {
             parts: [
-              { text: `Extract all details from this Indian paper bill/invoice (could be a restaurant bill, retail receipt, or utility bill). 
-              Return ONLY a JSON object with these keys: 
-              - store_name: Name of the establishment
-              - store_address: Full address if available
-              - store_phone: Contact number if available
-              - invoice_number: Bill/Invoice/Order number
-              - date: Date of transaction
-              - time: Time of transaction if available
-              - gstin: GST number of the store
-              - items: Array of objects with { description, quantity, rate, amount }
-              - subtotal: Amount before taxes
-              - cgst: CGST amount if specified
-              - sgst: SGST amount if specified
-              - service_charge: Service charge if specified
-              - discount: Discount amount if specified
-              - tax_amount: Total tax amount
-              - total_amount: Final payable amount
-              - payment_mode: Cash/Card/UPI if specified
-              - raw_text: A full transcription of all text found on the bill for reference.
-              
-              If a field is not found, use null. Ensure all numeric values are returned as strings or numbers without currency symbols.` },
+              { text: 'JSON extract: store_name, store_address, store_phone, invoice_number, date, time, gstin, items(desc, qty, rate, amt), subtotal, cgst, sgst, service_charge, discount, tax_amount, total_amount, payment_mode, raw_text.' },
               {
                 inlineData: {
-                  mimeType: file.type,
-                  data: await this.fileToBase64(file),
+                  mimeType: 'image/jpeg',
+                  data: compressedBase64,
                 },
               },
             ],
           },
         ],
-        config: {
-          responseMimeType: 'application/json',
-        },
+        config: { responseMimeType: 'application/json' },
       });
 
       return JSON.parse(response.text || '{}');
     } catch (error: any) {
-      console.error('Gemini Bill Extraction Error:', error);
+      console.error('Extraction Error:', error);
       throw error;
     }
+  }
+
+  private static async compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Max dimension 1600px for faster processing while keeping detail
+          const MAX_DIM = 1600;
+          if (width > height) {
+            if (width > MAX_DIM) {
+              height *= MAX_DIM / width;
+              width = MAX_DIM;
+            }
+          } else {
+            if (height > MAX_DIM) {
+              width *= MAX_DIM / height;
+              height = MAX_DIM;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Compress to JPEG with 0.8 quality
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(dataUrl.split(',')[1]);
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
   }
 
   private static fileToBase64(file: File): Promise<string> {

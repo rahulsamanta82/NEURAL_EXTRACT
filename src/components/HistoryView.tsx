@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  History, Search, Filter, Download, Trash2, ExternalLink, 
-  ChevronRight, Calendar, Banknote, FileText, Hash, ArrowRight
+  History, Search, Filter, Trash2, ExternalLink, 
+  ChevronRight, Calendar, Banknote, FileText, Hash, ArrowRight,
+  ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/src/utils/cn';
 import { Button } from './Button';
@@ -11,9 +12,12 @@ interface HistoryViewProps {
   history: any[];
   isLoading: boolean;
   fetchHistory: () => void;
+  onDelete: (id: number) => void;
+  onViewDetails: (item: any) => void;
+  onStartNew: () => void;
 }
 
-export const HistoryView = ({ history, isLoading, fetchHistory }: HistoryViewProps) => {
+export const HistoryView = ({ history, isLoading, fetchHistory, onDelete, onViewDetails, onStartNew }: HistoryViewProps) => {
   const [searchTerm, setSearchTerm] = React.useState('');
 
   const filteredHistory = history.filter(item => 
@@ -64,7 +68,7 @@ export const HistoryView = ({ history, isLoading, fetchHistory }: HistoryViewPro
             {searchTerm ? `No results matching "${searchTerm}"` : "You haven't processed any documents yet. Start your first extraction to see it here."}
           </p>
           {!searchTerm && (
-            <Button className="rounded-2xl px-12 h-16 text-lg font-bold shadow-2xl shadow-slate-900/10">
+            <Button onClick={onStartNew} className="rounded-2xl px-12 h-16 text-lg font-bold shadow-2xl shadow-slate-900/10">
               Start Processing
               <ArrowRight className="ml-2 w-6 h-6" />
             </Button>
@@ -113,13 +117,18 @@ export const HistoryView = ({ history, isLoading, fetchHistory }: HistoryViewPro
                   </div>
 
                   <div className="lg:col-span-3 flex items-center justify-end gap-4">
-                    <button className="p-4 bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 rounded-2xl transition-all border border-transparent hover:border-slate-100" title="View Details">
+                    <button 
+                      onClick={() => onViewDetails(item)}
+                      className="p-4 bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 rounded-2xl transition-all border border-transparent hover:border-slate-100" 
+                      title="View Details"
+                    >
                       <ExternalLink className="w-6 h-6" />
                     </button>
-                    <button className="p-4 bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 rounded-2xl transition-all border border-transparent hover:border-slate-100" title="Download PDF">
-                      <Download className="w-6 h-6" />
-                    </button>
-                    <button className="p-4 bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100" title="Delete Record">
+                    <button 
+                      onClick={() => onDelete(item.id)}
+                      className="p-4 bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100" 
+                      title="Delete Record"
+                    >
                       <Trash2 className="w-6 h-6" />
                     </button>
                   </div>

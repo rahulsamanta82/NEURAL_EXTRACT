@@ -125,12 +125,8 @@ export default function App() {
       
       setExtractedData(data);
       
-      // Simulate field-by-field revelation for effect
-      const fields = Object.keys(data);
-      for (const field of fields) {
-        await new Promise(r => setTimeout(r, 200));
-        setRevealedFields(prev => new Set([...prev, field]));
-      }
+      // Reveal all fields immediately
+      setRevealedFields(new Set(Object.keys(data)));
 
       // 2. Save to backend
       await ApiService.extract(selectedFile, data, processorType);
@@ -179,6 +175,30 @@ export default function App() {
       setSuccess('API Key updated. You can now retry the extraction.');
       setError(null);
     }
+  };
+
+  const handleDelete = async (id: number) => {
+    console.log('[App] Deleting extraction:', id);
+    if (!window.confirm('Are you sure you want to delete this extraction?')) return;
+    try {
+      await ApiService.deleteHistory(id);
+      setSuccess('Extraction deleted successfully.');
+      // Update local state immediately for better UX
+      setHistory(prev => prev.filter(item => item.id !== id));
+    } catch (err: any) {
+      console.error('[App] Delete failed:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleViewDetails = (item: any) => {
+    setProcessorType(item.type);
+    setExtractedData(item);
+    setRevealedFields(new Set(Object.keys(item)));
+    setView('upload');
+    // We don't have the original file object here, but we can show the data
+    setSelectedFile(null); 
+    setPreviewUrl(null);
   };
 
   const toggleField = (field: string) => {
@@ -324,6 +344,9 @@ export default function App() {
               history={history}
               isLoading={isLoading}
               fetchHistory={fetchHistory}
+              onDelete={handleDelete}
+              onViewDetails={handleViewDetails}
+              onStartNew={() => setView('upload')}
             />
           )}
         </AnimatePresence>

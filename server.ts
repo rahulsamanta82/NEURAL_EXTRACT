@@ -182,6 +182,21 @@ apiRouter.get('/history', authenticateToken, (req: any, res) => {
   }
 });
 
+apiRouter.delete('/extractions/:id', authenticateToken, (req: any, res) => {
+  const { id } = req.params;
+  try {
+    const stmt = db.prepare('DELETE FROM extractions WHERE id = ? AND user_id = ?');
+    const result = stmt.run(id, req.user.id);
+    if (result.changes > 0) {
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: 'Extraction not found or unauthorized' });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete extraction' });
+  }
+});
+
 // Health check
 apiRouter.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString(), environment: process.env.VERCEL ? 'vercel' : 'local' });

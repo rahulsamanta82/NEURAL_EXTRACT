@@ -1,5 +1,5 @@
 {
-  "name": "ChequeExtract AI",
-  "description": "Proprietary AI-powered bank cheque data extraction tool for Indian financial institutions.",
+  "name": "DocuMint",
+  "description": "Proprietary AI-powered document extraction tool for Indian financial institutions and businesses.",
   "requestFramePermissions": []
 }
